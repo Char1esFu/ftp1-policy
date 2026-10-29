@@ -108,7 +108,7 @@ NUM_TRAIN_STEPS=300 SAVE_INTERVAL=150 VAL_INTERVAL=150 GLOBAL_BATCH=16 EXP_SUFFI
 
 ### 其他
 
-- `uv.lock` 固定清华源，alex 上下载大 wheel 超时；`setup_env.sh` 先把它替换成 PyPI。
+- 上游 `uv.lock` 固定清华源，alex 上下载大 wheel 超时；本 fork 已提交 PyPI 版。`setup_env.sh` 里的替换保留，从 upstream 合并回清华源的 lock 后会再次生效。
 - openpi 通过 gcsfs 拉 PaliGemma tokenizer 会失败，`setup_env.sh` 改用 HTTPS 直接下载。
 - torch.compile / triton 缓存放 `$TMPDIR`（home 文件数配额），由 common.sh 设置。
 - 6 卡不能整除 global batch 64，脚本会拒绝。
