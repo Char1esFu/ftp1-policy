@@ -24,9 +24,18 @@ def main(config: _config.TrainConfig):
     if data_config.repo_id is None:
         raise ValueError("Data config must have a repo_id")
     output_dir = pathlib.Path(config.assets_dirs) / data_config.repo_id
+    # FTP1_PRESERVE_SPLIT=1 keeps hand-written train_val_split*.json files across the
+    # wipe below, so a fixed split (e.g. a held-out val set) is honored by the loader.
+    preserved_splits = {}
+    if os.environ.get("FTP1_PRESERVE_SPLIT") == "1" and output_dir.exists():
+        preserved_splits = {p.relative_to(output_dir): p.read_bytes() for p in output_dir.glob("*/train_val_split*.json")}
     if os.path.exists(output_dir):
         shutil.rmtree(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
+    for rel_path, content in preserved_splits.items():
+        (output_dir / rel_path).parent.mkdir(parents=True, exist_ok=True)
+        (output_dir / rel_path).write_bytes(content)
+        print(f"Preserved existing split file {output_dir / rel_path}")
     stats_json_path = output_dir / "dataset_stats.json"
 
     train_dataset, val_dataset = _data_loader.create_torch_dataset(data_config, action_horizon, config.model)
@@ -277,4 +286,10 @@ def main(config: _config.TrainConfig):
 
 
 if __name__ == "__main__":
-    main(_config.cli())
+    config = _config.cli()
+    # Same as zarr_train_ftp1_pytorch.py: CLI overrides such as dataset_config_path only
+    # reach the data factory after finalize_config(); without it the loader falls back
+    # to the LeRobot path and looks up repo_id on the Hugging Face Hub.
+    if isinstance(config, _config.FTP1TrainConfig):
+        config.finalize_config()
+    main(config)
