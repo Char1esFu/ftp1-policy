@@ -63,6 +63,8 @@ export USE_SWANLAB=false
 export WANDB_MODE="${WANDB_MODE:-offline}"
 export WANDB_DIR="${WANDB_DIR:-$FTP1_CACHE/wandb}"
 export WANDB_PROJECT_NAME="${WANDB_PROJECT_NAME:-ftp1_univtac}"
+# Offline runs record no entity; plain `wandb sync` then prints "done" but uploads nothing. Name it explicitly.
+export WANDB_ENTITY="${WANDB_ENTITY:-pvc_tudarmstadt}"
 mkdir -p "$WANDB_DIR"
 
 # Released task names. put_bottle_in_shelf was trained as domain "UniVTAC_put_bottle".
