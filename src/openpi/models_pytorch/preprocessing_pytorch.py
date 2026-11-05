@@ -18,6 +18,18 @@ IMAGE_KEYS = (
 IMAGE_RESOLUTION = (224, 224)
 
 
+class SimpleProcessedObservation:
+    """Plain attribute container returned by preprocess_observation_pytorch.
+
+    Defined at module level: a class created inside the function is a new type on every call, which fails
+    torch.compile's type guard and recompiles the caller each training step until the recompile limit is hit.
+    """
+
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+
 def preprocess_observation_pytorch(
     observation,
     *,
@@ -195,11 +207,6 @@ def preprocess_observation_pytorch(
         state_masks = observation.state_masks
 
     # Create a simple object with the required attributes instead of using the complex Observation class
-    class SimpleProcessedObservation:
-        def __init__(self, **kwargs):
-            for key, value in kwargs.items():
-                setattr(self, key, value)
-
     return SimpleProcessedObservation(
         images=out_images,
         image_masks=out_masks,
