@@ -68,6 +68,7 @@ NUM_TRAIN_STEPS=300 SAVE_INTERVAL=150 VAL_INTERVAL=150 GLOBAL_BATCH=16 EXP_SUFFI
 - 看运行中作业的 GPU：`srun --jobid=<id> --overlap nvidia-smi`。
 - wandb：作业默认 `WANDB_MODE=offline`，写到 `$WANDB_DIR/wandb/offline-run-<时间>-<id>/`，线上位置 `pvc_tudarmstadt/ftp1_univtac`（`WANDB_ENTITY` / `WANDB_PROJECT_NAME`，见 common.sh）。实时跟踪运行中的作业（登录节点）：`nohup bash slurm/wandb_sync.sh --live <run 目录> > ~/wandb_live_<jobid>.log 2>&1 &`，run 结束后自动退出。也可以提交前 `export WANDB_MODE=online` 直接在线写（计算节点经 NHR 代理可访问外网）。
 - **坑**：旧版 `wandb sync` 对这些离线 run（没记录 entity）会打印 `Syncing: https://wandb.ai//ftp1_univtac/... done.`（注意 `//` 空 entity），但服务器上什么都没建，还会写 `run-*.wandb.synced` 标记，之后的同步会跳过它。`wandb_sync.sh` 已改用 `wandb beta sync -e -p`；遇到这种被误标的 run，删掉 `.synced` 文件再同步。验证：`wandb.Api().run("pvc_tudarmstadt/ftp1_univtac/<id>")`。
+- 训练突然停住、GPU 0%、load average 很高但 CPU 空闲：多半是该节点的 `/home/atuin` NFS 挂载卡住（2026-11-05 a0225 卡了约 11 分钟后自行恢复）。在节点上用 `srun --jobid=<id> --overlap timeout 20 stat <数据集文件>` 确认；持续超过约 15 分钟再取消，用 `--exclude=<节点>` 重新提交，会从最近的 checkpoint 续训。
 - 开始时间估计：`sbatch --test-only ...`。估计偏悲观（按运行中作业的时限上限算），实际常早数小时；缩短 `--time` 对估计没帮助。
 
 ## 参考数值（put_bottle_in_shelf，每卡 batch 8，bf16，torch.compile，无 grad ckpt）
